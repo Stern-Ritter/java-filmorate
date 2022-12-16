@@ -8,8 +8,8 @@ import ru.yandex.practicum.filmorate.exception.UserAlreadyExistException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.utils.Exceptions;
-import ru.yandex.practicum.filmorate.validator.UserValidator;
 
+import javax.validation.Valid;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -31,12 +31,10 @@ public class UserController {
     }
 
     @PostMapping
-    public User addUser(@RequestBody User user) {
+    public User addUser(@Valid @RequestBody User user) {
         log.info(String.format("POST '/users', parameters={%s}", user));
 
         try {
-            UserValidator.validate(user);
-
             Integer id = user.getId();
             if (id != null && users.containsKey(id)) {
                 throw new UserAlreadyExistException(String.format(Exceptions.USER_ALREADY_EXISTS_TEMPLATE, id));
@@ -64,12 +62,10 @@ public class UserController {
     }
 
     @PutMapping
-    public User updateUser(@RequestBody User user) {
+    public User updateUser(@Valid @RequestBody User user) {
         log.info(String.format("PUT '/users', parameters={%s}", user));
 
         try {
-            UserValidator.validate(user);
-
             Integer id = user.getId();
             if (id == null) {
                 id = getNextIdx();

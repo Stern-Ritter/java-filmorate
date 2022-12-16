@@ -8,8 +8,8 @@ import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.utils.Exceptions;
-import ru.yandex.practicum.filmorate.validator.FilmValidator;
 
+import javax.validation.Valid;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -32,12 +32,10 @@ public class FilmController {
     }
 
     @PostMapping
-    public Film addFilm(@RequestBody Film film) {
+    public Film addFilm(@Valid @RequestBody Film film) {
         log.info(String.format("POST '/films', parameters={%s}", film));
 
         try {
-            FilmValidator.validate(film);
-
             Integer id = film.getId();
             if (id != null && films.containsKey(id)) {
                 throw new FilmAlreadyExistException(String.format(Exceptions.FILM_ALREADY_EXISTS_TEMPLATE, id));
@@ -58,12 +56,10 @@ public class FilmController {
     }
 
     @PutMapping
-    public Film updateFilm(@RequestBody Film film) {
+    public Film updateFilm(@Valid @RequestBody Film film) {
         log.info(String.format("PUT '/films', parameters={%s}", film));
 
         try {
-            FilmValidator.validate(film);
-
             Integer id = film.getId();
             if (id == null) {
                 id = getNextIdx();
