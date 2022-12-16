@@ -7,7 +7,7 @@ import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.UserAlreadyExistException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.utils.Exceptions;
+import ru.yandex.practicum.filmorate.exceptions.Exceptions;
 
 import javax.validation.Valid;
 import java.util.Collection;

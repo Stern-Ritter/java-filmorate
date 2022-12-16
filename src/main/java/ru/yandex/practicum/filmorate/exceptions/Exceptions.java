@@ -1,4 +1,4 @@
-package ru.yandex.practicum.filmorate.utils;
+package ru.yandex.practicum.filmorate.exceptions;
 
 public class Exceptions {
     public static final String FILM_ALREADY_EXISTS_TEMPLATE = "A film with this id: %d already exists.";
