@@ -2,32 +2,32 @@ package ru.yandex.practicum.filmorate.controller;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.UserAlreadyExistException;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.exceptions.Exceptions;
+import ru.yandex.practicum.filmorate.service.UserService;
 
 import javax.validation.Valid;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/users")
 public class UserController {
-    private static final Logger log = LoggerFactory.getLogger(UserController.class);
-    private static int currentIdx = 1;
+    private final static Logger log = LoggerFactory.getLogger(UserController.class);
+    private final UserService userService;
 
-    private static int getNextIdx() {
-        return currentIdx++;
-    }
-
-    private final Map<Integer, User> users;
-
-    public UserController() {
-        users = new HashMap<>();
+    @Autowired
+    public UserController(UserService userService) {
+        this.userService = userService;
     }
 
     @PostMapping
@@ -35,28 +35,9 @@ public class UserController {
         log.info(String.format("POST '/users', parameters={%s}", user));
 
         try {
-            Integer id = user.getId();
-            if (id != null && users.containsKey(id)) {
-                throw new UserAlreadyExistException(String.format(Exceptions.USER_ALREADY_EXISTS_TEMPLATE, id));
-            }
-
-            id = getNextIdx();
-            user.setId(id);
-
-            String name = user.getName();
-            if(name == null) {
-                String login = user.getLogin();
-                user.setName(login);
-            }
-
-            users.put(id, user);
-
-            return user;
-        } catch (ValidationException ex) {
-            log.warn(String.format("POST '/users', request body={%s} validation exception: %s.", user, ex.getMessage()));
-            throw new ValidationException(ex.getMessage());
+            return userService.addUser(user);
         } catch (UserAlreadyExistException ex) {
-            log.warn(String.format("POST '/users' exception: %s.", ex.getMessage()));
+            log.warn(String.format("POST '/users', request body={%s} exception: %s", user, ex.getMessage()));
             throw new UserAlreadyExistException(ex.getMessage());
         }
     }
@@ -66,25 +47,77 @@ public class UserController {
         log.info(String.format("PUT '/users', parameters={%s}", user));
 
         try {
-            Integer id = user.getId();
-            if (id == null) {
-                id = getNextIdx();
-                user.setId(id);
-            } else if (!users.containsKey(id)) {
-                throw new NotFoundException(String.format(Exceptions.USER_NOT_EXISTS_TEMPLATE, id));
-            }
+            return userService.updateUser(user);
+        } catch (NotFoundException ex) {
+            log.warn(String.format("PUT '/users', request body={%s} exception: %s", user, ex.getMessage()));
+            throw new NotFoundException(ex.getMessage());
+        }
+    }
 
-            users.put(id, user);
+    @GetMapping("/{id}")
+    public User getUser(@PathVariable long id) {
+        log.info(String.format("GET '/users/%s'", id));
 
-            return user;
-        } catch (ValidationException ex) {
-            log.warn(String.format("PUT '/users', request body={%s} validation exception: %s.", user, ex.getMessage()));
-            throw new ValidationException(ex.getMessage());
+        try {
+            return userService.getUser(id);
+        } catch (NotFoundException ex) {
+            log.warn(String.format("GET '/users/%s, exception: %s", id, ex.getMessage()));
+            throw new NotFoundException(ex.getMessage());
         }
     }
 
     @GetMapping
     public Collection<User> getAllUsers() {
-        return users.values();
+        log.info("GET '/users'");
+
+        return userService.getAllUsers();
+    }
+
+    @PutMapping("/{id}/friends/{friendId}")
+    public User addFriend(@PathVariable(name = "id") long userId, @PathVariable long friendId) {
+        log.info(String.format("PUT '/users/%s/friends/%s'", userId, friendId));
+
+        try {
+            return userService.addFriend(userId, friendId);
+        } catch (NotFoundException ex) {
+            log.warn(String.format("PUT '/users/%s/friends/%s', exception: %s", userId, friendId, ex.getMessage()));
+            throw new NotFoundException(ex.getMessage());
+        }
+    }
+
+    @DeleteMapping("/{id}/friends/{friendId}")
+    public User deleteFriend(@PathVariable(name = "id") long userId, @PathVariable long friendId) {
+        log.info(String.format("DELETE '/users/%s/friends/%s'", userId, friendId));
+
+        try {
+            return userService.deleteFriend(userId, friendId);
+        } catch (NotFoundException ex) {
+            log.warn(String.format("DELETE '/users/%s/friends/%s', exception: %s", userId, friendId, ex.getMessage()));
+            throw new NotFoundException(ex.getMessage());
+        }
+    }
+
+    @GetMapping("/{id}/friends/common/{otherId}")
+    public Collection<User> getCommonFriends(@PathVariable(name = "id") long userId, @PathVariable(name = "otherId") long otherUserId) {
+        log.info(String.format("GET '/users/%s/friends/common/%s'", userId, otherUserId));
+
+        try {
+            return userService.getCommonFriends(userId, otherUserId);
+        } catch (NotFoundException ex) {
+            log.warn(String.format("GET '/users/{%s}/friends/common/{%s}', exception: %s", userId, otherUserId, ex.getMessage()));
+            throw new NotFoundException(ex.getMessage());
+        }
+    }
+
+    @GetMapping("/{id}/friends")
+    public Collection<User> getFriends(@PathVariable(name = "id") long userId) {
+        log.info(String.format("GET '/%s/friends/'", userId));
+
+        try {
+            return userService.getFriends(userId);
+        } catch (NotFoundException ex) {
+            log.warn(String.format("GET '/users/%s/friends', exception: %s", userId, ex.getMessage()));
+            throw new NotFoundException(ex.getMessage());
+        }
     }
 }

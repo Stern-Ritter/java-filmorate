@@ -2,33 +2,27 @@ package ru.yandex.practicum.filmorate.controller;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.exception.FilmAlreadyExistException;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.exceptions.Exceptions;
+import ru.yandex.practicum.filmorate.service.FilmService;
 
 import javax.validation.Valid;
+import javax.validation.constraints.Min;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 
 
 @RestController
 @RequestMapping("/films")
 public class FilmController {
     private final static Logger log = LoggerFactory.getLogger(FilmController.class);
-    private static int currentIdx = 1;
+    private final FilmService filmService;
 
-    private static int getNextIdx() {
-        return currentIdx++;
-    }
-
-    private final Map<Integer, Film> films;
-
-    public FilmController() {
-        films = new HashMap<>();
+    @Autowired
+    public FilmController(FilmService filmService) {
+        this.filmService = filmService;
     }
 
     @PostMapping
@@ -36,21 +30,9 @@ public class FilmController {
         log.info(String.format("POST '/films', parameters={%s}", film));
 
         try {
-            Integer id = film.getId();
-            if (id != null && films.containsKey(id)) {
-                throw new FilmAlreadyExistException(String.format(Exceptions.FILM_ALREADY_EXISTS_TEMPLATE, id));
-            }
-
-            id = getNextIdx();
-            film.setId(id);
-            films.put(id, film);
-
-            return film;
-        } catch (ValidationException ex) {
-            log.warn(String.format("POST '/films', request body={%s} validation exception: %s.", film, ex.getMessage()));
-            throw new ValidationException(ex.getMessage());
+            return filmService.addFilm(film);
         } catch (FilmAlreadyExistException ex) {
-            log.warn(String.format("POST '/films' exception: %s.", ex.getMessage()));
+            log.warn(String.format("POST '/films', request body={%s} exception: %s", film, ex.getMessage()));
             throw new FilmAlreadyExistException(ex.getMessage());
         }
     }
@@ -60,24 +42,58 @@ public class FilmController {
         log.info(String.format("PUT '/films', parameters={%s}", film));
 
         try {
-            Integer id = film.getId();
-            if (id == null) {
-                id = getNextIdx();
-                film.setId(id);
-            } else if (!films.containsKey(id)) {
-                throw new NotFoundException(String.format(Exceptions.FILM_NOT_EXISTS_TEMPLATE, id));
-            }
-            films.put(id, film);
+            return filmService.updateFilm(film);
+        } catch (NotFoundException ex) {
+            log.warn(String.format("PUT '/films', request body={%s} exception: %s", film, ex.getMessage()));
+            throw new NotFoundException(ex.getMessage());
+        }
+    }
 
-            return film;
-        } catch (ValidationException ex) {
-            log.warn(String.format("PUT '/films', request body={%s} validation exception: %s.", film, ex.getMessage()));
-            throw new ValidationException(ex.getMessage());
+    @GetMapping("/{id}")
+    public Film getFilm(@PathVariable long id) {
+        try {
+            return filmService.getFilm(id);
+        } catch (NotFoundException ex) {
+            log.warn(String.format("GET '/films/%s, exception: %s", id, ex.getMessage()));
+            throw new NotFoundException(ex.getMessage());
         }
     }
 
     @GetMapping
     public Collection<Film> getAllFilms() {
-        return films.values();
+        log.info("GET '/films'.");
+
+        return filmService.getAllFilms();
+    }
+
+    @PutMapping("/{id}/like/{userId}")
+    public Film addLike(@PathVariable(name = "id") long filmId, @PathVariable long userId) {
+        log.info(String.format("PUT '/films/%s/like/%s'", filmId, userId));
+
+        try {
+            return filmService.addLike(filmId, userId);
+        } catch (NotFoundException ex) {
+            log.warn(String.format("PUT '/films/%s/like/%s', exception: %s", filmId, userId, ex.getMessage()));
+            throw new NotFoundException(ex.getMessage());
+        }
+    }
+
+    @DeleteMapping("/{id}/like/{userId}")
+    public Film deleteLike(@PathVariable(name = "id") long filmId, @PathVariable long userId) {
+        log.info(String.format("DELETE '/films/%s/like/%s'", filmId, userId));
+
+        try {
+            return filmService.deleteLike(filmId, userId);
+        } catch (NotFoundException ex) {
+            log.warn(String.format("DELETE '/films/%s/like/%s', exception: %s", filmId, userId, ex.getMessage()));
+            throw new NotFoundException(ex.getMessage());
+        }
+    }
+
+    @GetMapping("/popular")
+    public Collection<Film> getPopularFilms(@RequestParam(defaultValue = "10") @Min(1) int count) {
+        log.info(String.format("GET '/films/popular?count=%s'", count));
+
+        return filmService.getPopularFilms(count);
     }
 }

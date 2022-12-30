@@ -14,7 +14,7 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class FilmTest {
-    private static final int DEFAULT_ID = 1;
+    private static final long DEFAULT_ID = 1;
     private static final String DEFAULT_NAME = "Star Wars: Episode V - The Empire Strikes Back";
     private static final String EMPTY_NAME = "";
     private static final String DEFAULT_DESCRIPTION = "The Empire Strikes Back (also known as Star Wars: Episode V " +

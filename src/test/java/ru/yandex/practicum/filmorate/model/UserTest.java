@@ -14,7 +14,7 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class UserTest {
-    private static final int DEFAULT_ID = 1;
+    private static final long DEFAULT_ID = 1;
     private static final String DEFAULT_EMAIL = "test_user@mail.ru";
     private static final String EMPTY_EMAIL = "";
     private static final String EMAIL_WITHOUT_AT_SIGN = "test_user2mail.ru";
