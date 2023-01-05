@@ -1,74 +1,72 @@
 package ru.yandex.practicum.filmorate.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.exceptions.Exceptions;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Set;
 import java.util.stream.Collectors;
 
+
 @Service
+@RequiredArgsConstructor
 public class FilmService {
     private final FilmStorage filmStorage;
     private final UserStorage userStorage;
 
-    @Autowired
-    public FilmService(FilmStorage filmStorage, UserStorage userStorage) {
-        this.filmStorage = filmStorage;
-        this.userStorage = userStorage;
+    public Film create(Film film) {
+        return filmStorage.create(film);
     }
 
-    public Film addFilm(Film film) {
-        return filmStorage.add(film);
-    }
-
-    public Film updateFilm(Film film) {
+    public Film update(Film film) {
         return filmStorage.update(film);
     }
 
-    public Film getFilm(long id) {
-        return filmStorage.get(id);
+    public Film get(long id) {
+        return filmStorage.get(id)
+                .orElseThrow(() -> new NotFoundException(String.format(Exceptions.FILM_NOT_EXISTS_TEMPLATE, id)));
     }
 
-    public Collection<Film> getAllFilms() {
-        return filmStorage.getAll();
+    public Collection<Film> get() {
+        return filmStorage.get();
     }
 
     public Film addLike(long filmId, long userId) {
-        Film film = filmStorage.get(filmId);
-        userStorage.get(userId);
+        Film film = filmStorage.get(filmId)
+                .orElseThrow(() -> new NotFoundException(String.format(Exceptions.FILM_NOT_EXISTS_TEMPLATE, filmId)));
+        userStorage.get(userId)
+                .orElseThrow(() -> new NotFoundException(String.format(Exceptions.USER_NOT_EXISTS_TEMPLATE, userId)));
 
-        Set<Long> likes = Optional.ofNullable(film.getLikes()).orElse(new HashSet<>());
+        Set<Long> likes = film.getLikes();
         likes.add(userId);
-        film.setLikes(likes);
-        filmStorage.update(film);
 
         return film;
     }
 
     public Film deleteLike(long filmId, long userId) {
-        Film film = filmStorage.get(filmId);
-        userStorage.get(userId);
+        Film film = filmStorage.get(filmId)
+                .orElseThrow(() -> new NotFoundException(String.format(Exceptions.FILM_NOT_EXISTS_TEMPLATE, filmId)));
+        userStorage.get(userId)
+                .orElseThrow(() -> new NotFoundException(String.format(Exceptions.USER_NOT_EXISTS_TEMPLATE, userId)));
 
-        Set<Long> likes = Optional.ofNullable(film.getLikes()).orElse(new HashSet<>());
+        Set<Long> likes = film.getLikes();
         likes.remove(userId);
-        film.setLikes(likes);
-        filmStorage.update(film);
 
         return film;
     }
 
-    public Collection<Film> getPopularFilms(int count) {
-        Collection<Film> films = filmStorage.getAll();
-
-        if (films == null) return Collections.emptyList();
+    public Collection<Film> getPopular(int count) {
+        Collection<Film> films = filmStorage.get();
 
         return films.stream()
-                .sorted(Collections.reverseOrder(
-                        Comparator.comparingInt(film -> Optional.ofNullable(film.getLikes()).orElse(new HashSet<>()).size())
-                ))
+                .sorted(Collections.reverseOrder(Comparator.comparingInt(film -> film.getLikes().size())))
                 .limit(count)
                 .collect(Collectors.toList());
     }

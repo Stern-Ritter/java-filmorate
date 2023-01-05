@@ -1,19 +1,18 @@
 package ru.yandex.practicum.filmorate.storage.film;
 
-import ru.yandex.practicum.filmorate.exception.FilmAlreadyExistException;
-import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 
-import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
 
 public interface FilmStorage {
-    Film get(long id) throws NotFoundException;
+    Optional<Film> get(long id);
 
-    Collection<Film> getAll();
+    List<Film> get();
 
-    Film add(Film film) throws FilmAlreadyExistException;
+    Film create(Film film);
 
-    Film update(Film film) throws NotFoundException;
+    Film update(Film film);
 
-    Film delete(long id) throws NotFoundException;
+    Film delete(long id);
 }

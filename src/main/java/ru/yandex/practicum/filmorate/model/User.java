@@ -1,10 +1,12 @@
 package ru.yandex.practicum.filmorate.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Builder;
 import lombok.Data;
 
 import javax.validation.constraints.*;
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.Set;
 
 import static ru.yandex.practicum.filmorate.validator.UserValidator.BIRTHDAY_VALIDATION_EXCEPTION;
@@ -23,7 +25,7 @@ public class User {
     private String email;
 
     @NotEmpty(message = LOGIN_VALIDATION_EXCEPTION)
-    @Pattern(regexp = "^\\S*$",message = LOGIN_VALIDATION_EXCEPTION)
+    @Pattern(regexp = "^\\S*$", message = LOGIN_VALIDATION_EXCEPTION)
     private String login;
 
     private String name;
@@ -32,5 +34,6 @@ public class User {
     @PastOrPresent(message = BIRTHDAY_VALIDATION_EXCEPTION)
     private LocalDate birthday;
 
-    private Set<Long> friends;
+    @JsonIgnore
+    private final Set<Long> friends = new HashSet<>();
 }

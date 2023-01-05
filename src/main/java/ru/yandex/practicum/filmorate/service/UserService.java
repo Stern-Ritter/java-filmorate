@@ -1,96 +1,102 @@
 package ru.yandex.practicum.filmorate.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.exceptions.Exceptions;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Optional;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class UserService {
     private final UserStorage storage;
 
-    @Autowired
-    public UserService(UserStorage storage) {
-        this.storage = storage;
+    public User create(User user) {
+        updateEmptyUserName(user);
+        return storage.create(user);
     }
 
-    public User addUser(User user) {
-        return storage.add(user);
-    }
-
-    public User updateUser(User user) {
+    public User update(User user) {
+        updateEmptyUserName(user);
         return storage.update(user);
     }
 
-    public User getUser(long id) {
-        return storage.get(id);
+    public User get(long id) {
+        return storage.get(id)
+                .orElseThrow(() -> new NotFoundException(String.format(Exceptions.USER_NOT_EXISTS_TEMPLATE, id)));
     }
 
-    public Collection<User> getAllUsers() {
-        return storage.getAll();
+    public Collection<User> get() {
+        return storage.get();
     }
 
     public User addFriend(long userId, long otherUserId) {
-        User user = storage.get(userId);
-        User otherUser = storage.get(otherUserId);
+        User user = storage.get(userId)
+                .orElseThrow(() -> new NotFoundException(String.format(Exceptions.USER_NOT_EXISTS_TEMPLATE, userId)));
+        User otherUser = storage.get(otherUserId)
+                .orElseThrow(() -> new NotFoundException(String.format(Exceptions.USER_NOT_EXISTS_TEMPLATE, otherUserId)));
 
-        Set<Long> userFriends = Optional.ofNullable(user.getFriends()).orElse(new HashSet<>());
-        Set<Long> otherUserFriends = Optional.ofNullable(otherUser.getFriends()).orElse(new HashSet<>());
+        Set<Long> userFriends = user.getFriends();
+        Set<Long> otherUserFriends = otherUser.getFriends();
         userFriends.add(otherUserId);
         otherUserFriends.add(userId);
-        user.setFriends(userFriends);
-        otherUser.setFriends(otherUserFriends);
-
-        storage.update(user);
-        storage.update(otherUser);
 
         return user;
     }
 
     public User deleteFriend(long userId, long otherUserId) {
-        User user = storage.get(userId);
-        User otherUser = storage.get(otherUserId);
+        User user = storage.get(userId)
+                .orElseThrow(() -> new NotFoundException(String.format(Exceptions.USER_NOT_EXISTS_TEMPLATE, userId)));
+        User otherUser = storage.get(otherUserId)
+                .orElseThrow(() -> new NotFoundException(String.format(Exceptions.USER_NOT_EXISTS_TEMPLATE, otherUserId)));
 
-        Set<Long> userFriends = Optional.ofNullable(user.getFriends()).orElse(new HashSet<>());
-        Set<Long> otherUserFriends = Optional.ofNullable(otherUser.getFriends()).orElse(new HashSet<>());
+        Set<Long> userFriends = user.getFriends();
+        Set<Long> otherUserFriends = otherUser.getFriends();
         userFriends.remove(otherUserId);
         otherUserFriends.remove(userId);
-        user.setFriends(userFriends);
-        otherUser.setFriends(otherUserFriends);
-
-        storage.update(user);
-        storage.update(otherUser);
 
         return user;
     }
 
     public Collection<User> getCommonFriends(long userId, long otherUserId) {
-        User user = storage.get(userId);
-        User otherUser = storage.get(otherUserId);
+        User user = storage.get(userId)
+                .orElseThrow(() -> new NotFoundException(String.format(Exceptions.USER_NOT_EXISTS_TEMPLATE, userId)));
+        User otherUser = storage.get(otherUserId)
+                .orElseThrow(() -> new NotFoundException(String.format(Exceptions.USER_NOT_EXISTS_TEMPLATE, otherUserId)));
         Set<Long> userFriends = user.getFriends();
         Set<Long> otherUserFriends = otherUser.getFriends();
-
-        if (userFriends == null || otherUserFriends == null) return Collections.emptyList();
 
         return userFriends.stream()
                 .filter(otherUserFriends::contains)
                 .map(storage::get)
+                .map(item -> item.orElse(null))
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
 
     public Collection<User> getFriends(long userId) {
-        User user = storage.get(userId);
-        Set<Long> friends = Optional.ofNullable(user.getFriends()).orElse(new HashSet<>());
+        User user = storage.get(userId)
+                .orElseThrow(() -> new NotFoundException(String.format(Exceptions.USER_NOT_EXISTS_TEMPLATE, userId)));
+        Set<Long> friends = user.getFriends();
 
         return friends.stream()
                 .map(storage::get)
+                .map(item -> item.orElse(null))
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
+    }
+
+    private void updateEmptyUserName(User user) {
+        String name = user.getName();
+        if (name == null || name.isBlank()) {
+            String login = user.getLogin();
+            user.setName(login);
+        }
     }
 }
