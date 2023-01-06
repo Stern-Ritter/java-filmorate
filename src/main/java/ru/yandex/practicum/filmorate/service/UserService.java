@@ -74,8 +74,7 @@ public class UserService {
 
         return userFriends.stream()
                 .filter(otherUserFriends::contains)
-                .map(storage::get)
-                .map(Optional::get)
+                .map(this::get)
                 .collect(Collectors.toList());
     }
 
@@ -85,8 +84,7 @@ public class UserService {
         Set<Long> friends = user.getFriends();
 
         return friends.stream()
-                .map(storage::get)
-                .map(Optional::get)
+                .map(this::get)
                 .collect(Collectors.toList());
     }
 
