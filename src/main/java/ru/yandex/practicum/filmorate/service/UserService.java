@@ -7,8 +7,8 @@ import ru.yandex.practicum.filmorate.exceptions.Exceptions;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
-import java.util.Collection;
-import java.util.Objects;
+import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -32,7 +32,7 @@ public class UserService {
                 .orElseThrow(() -> new NotFoundException(String.format(Exceptions.USER_NOT_EXISTS_TEMPLATE, id)));
     }
 
-    public Collection<User> get() {
+    public List<User> get() {
         return storage.get();
     }
 
@@ -64,7 +64,7 @@ public class UserService {
         return user;
     }
 
-    public Collection<User> getCommonFriends(long userId, long otherUserId) {
+    public List<User> getCommonFriends(long userId, long otherUserId) {
         User user = storage.get(userId)
                 .orElseThrow(() -> new NotFoundException(String.format(Exceptions.USER_NOT_EXISTS_TEMPLATE, userId)));
         User otherUser = storage.get(otherUserId)
@@ -75,20 +75,18 @@ public class UserService {
         return userFriends.stream()
                 .filter(otherUserFriends::contains)
                 .map(storage::get)
-                .map(item -> item.orElse(null))
-                .filter(Objects::nonNull)
+                .map(Optional::get)
                 .collect(Collectors.toList());
     }
 
-    public Collection<User> getFriends(long userId) {
+    public List<User> getFriends(long userId) {
         User user = storage.get(userId)
                 .orElseThrow(() -> new NotFoundException(String.format(Exceptions.USER_NOT_EXISTS_TEMPLATE, userId)));
         Set<Long> friends = user.getFriends();
 
         return friends.stream()
                 .map(storage::get)
-                .map(item -> item.orElse(null))
-                .filter(Objects::nonNull)
+                .map(Optional::get)
                 .collect(Collectors.toList());
     }
 
