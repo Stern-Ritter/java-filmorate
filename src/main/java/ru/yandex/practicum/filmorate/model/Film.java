@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Builder;
 import lombok.Data;
 import ru.yandex.practicum.filmorate.annotation.AfterDate;
@@ -9,6 +10,8 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Positive;
 import javax.validation.constraints.Size;
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
 import static ru.yandex.practicum.filmorate.validator.FilmValidator.DESCRIPTION_VALIDATION_EXCEPTION;
 import static ru.yandex.practicum.filmorate.validator.FilmValidator.DURATION_VALIDATION_EXCEPTION;
@@ -22,7 +25,7 @@ import static ru.yandex.practicum.filmorate.validator.FilmValidator.RELEASE_DATE
 @Builder
 @NotNull(message = EMPTY_REQUEST_BODY_EXCEPTION)
 public class Film {
-    private Integer id;
+    private Long id;
 
     @NotBlank(message = NAME_VALIDATION_EXCEPTION)
     private String name;
@@ -38,4 +41,7 @@ public class Film {
     @NotNull(message = DURATION_VALIDATION_EXCEPTION)
     @Positive(message = DURATION_VALIDATION_EXCEPTION)
     private Integer duration;
+
+    @JsonIgnore
+    private final Set<Long> likes = new HashSet<>();
 }
